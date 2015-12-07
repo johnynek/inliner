@@ -1,4 +1,6 @@
 # Inliner
+[![Build
+Status](https://travis-ci.org/johnynek/inliner.svg)](https://travis-ci.org/johnynek/inliner)
 
 Inliner is a collection of scala macros to inline and optimize idiomatic scala into while loops or nested if/else statements. The purpose is to allow idiomatic scala without having to give up performance.
 
