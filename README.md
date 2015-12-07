@@ -1,8 +1,18 @@
 # Inliner
+[![Build
+Status](https://travis-ci.org/johnynek/inliner.svg)](https://travis-ci.org/johnynek/inliner)
 
 Inliner is a collection of scala macros to inline and optimize idiomatic scala into while loops or nested if/else statements. The purpose is to allow idiomatic scala without having to give up performance.
 
 ## How to use?
+Add `val inliner = ProjectRef(uri("git://github.com/johnynek/inliner.git"), "core")` to your sbt project, then add `.dependsOn(inliner)`
+to any project where you want to use the code. Then do:
+```scala
+import com.github.johnynek.inliner.{InlineTry, InlineOption, InlineCollection}
+import InlineTry._
+import InlineOption._
+import InlineCollection._
+```
 Generally you import methods from an object and replace calls like `x.method` with `x.inline.method`
 
 ### Collections
@@ -113,15 +123,15 @@ Check the issues, but generally support for more classes (such as Either) or con
 ```scala
 myList
   .map { x => (x, 1) }
-  .reduceOption { case (la, lb), (ra, rb) => (la + ra, lb + lb)
+  .reduceOption { case (la, lb), (ra, rb) => (la + ra, lb + lb) }
 ```
 to an expression like:
 ```scala
 val it = myList.iterator
 if (it.hasNext) {
-  val head = (it.next, 1)
-  var result1 = head._1
-  var result2 = head._2
+  val head = it.next
+  var result1 = head
+  var result2 = 1
   while(it.hasNext) {
     val item = it.next
     val item1 = item
