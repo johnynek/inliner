@@ -2,6 +2,7 @@ package com.github.johnynek.inliner.benchmark.jmh
 
 import com.github.johnynek.inliner.InlineCollection._
 import com.github.johnynek.inliner.InlineArray._
+import com.github.johnynek.inliner.InlineArraySpecializedOption
 
 import java.util.Random
 import java.util.concurrent.TimeUnit
@@ -13,12 +14,12 @@ import org.openjdk.jmh.infra.Blackhole
 object CollectionBenchmarks{
   val rng: Random = new Random(42)
 
-  private val inputArray: Array[Int] = (List.fill(400)(4) ++ List(5)).toArray
-  private val inputList = List.fill(400)(4) ++ List(5)
-  private val referenceList: List[java.lang.Integer] = List.fill(20)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))
-  private val referenceArray: Array[java.lang.Integer] = (List.fill(20)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))).toArray
-  private val valueTarget = 5
-  private val referenceTarget = Integer.valueOf(5)
+  private val inputArray: Array[Int] = (List.fill(100)(4) ++ List(5)).toArray
+  private val inputList = List.fill(100)(4) ++ List(5)
+  private val referenceList: List[java.lang.Integer] = List.fill(100)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))
+  private val referenceArray: Array[java.lang.Integer] = (List.fill(100)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))).toArray
+  private val valueTarget:Int  = 5
+
 }
 
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -33,9 +34,10 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findListInline(bh: Blackhole): Unit = {
     var iter = 20
+
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputList.inline.find{x => iter % 5 == 0 || x == valueTarget})
+      bh.consume(inputList.inline.find{x => iter % 5 == 0 || x == 5})
     }
   }
 
@@ -43,9 +45,10 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findList(bh: Blackhole): Unit = {
     var iter = 20
+
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputList.find{x => iter % 5 == 0 || x == valueTarget})
+      bh.consume(inputList.find{x => iter % 5 == 0 || x == 5})
     }
   }
 
@@ -53,9 +56,21 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findArrayInline(bh: Blackhole): Unit = {
     var iter = 20
+
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputArray.inline.find{x => iter % 5 == 0 || x == valueTarget})
+      bh.consume(inputArray.inline.find{x => iter % 5 == 0 || x == 5})
+    }
+  }
+
+  @Benchmark
+  @Measurement(batchSize = 200000)
+  def findArraySpecializedInline(bh: Blackhole): Unit = {
+    var iter = 20
+
+    while(iter > 0) {
+      iter -= 1
+      bh.consume(InlineArraySpecializedOption.find(inputArray){x => iter % 5 == 0 || x == 5})
     }
   }
 
@@ -63,9 +78,10 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findArray(bh: Blackhole): Unit = {
     var iter = 20
+
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputArray.find{x => iter % 5 == 0 || x == valueTarget})
+      bh.consume(inputArray.find{x => iter % 5 == 0 || x == 5})
     }
   }
 
@@ -74,6 +90,7 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findReferenceListInline(bh: Blackhole): Unit = {
     var iter = 20
+    val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
       bh.consume(referenceList.inline.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
@@ -84,6 +101,7 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findReferenceList(bh: Blackhole): Unit = {
     var iter = 20
+    val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
       bh.consume(referenceList.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
@@ -94,6 +112,7 @@ class CollectionBenchmarks {
   @Measurement(batchSize = 200000)
   def findReferenceArrayInline(bh: Blackhole): Unit = {
     var iter = 20
+    val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
       bh.consume(referenceArray.inline.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
@@ -102,8 +121,20 @@ class CollectionBenchmarks {
 
   @Benchmark
   @Measurement(batchSize = 200000)
+  def findReferenceArraySpecializedInline(bh: Blackhole): Unit = {
+    var iter = 20
+    val referenceTarget = Integer.valueOf(5)
+    while(iter > 0) {
+      iter -= 1
+      bh.consume(InlineArraySpecializedOption.find(referenceArray){x => iter % 5 == 0 || x.eq(referenceTarget)})
+    }
+  }
+
+  @Benchmark
+  @Measurement(batchSize = 200000)
   def findReferenceArray(bh: Blackhole): Unit = {
     var iter = 20
+    val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
       bh.consume(referenceArray.find{x => iter % 5 == 0 || x.eq(referenceTarget)})

@@ -8,7 +8,7 @@ import MacroCompat.{Context, newTerm, recurse, singleConsArg}
  * them to be called as (new InlineOption(o).method) or it won't compile,
  * if it compiles, that bit is replaced with code using if/else
  */
-class InlineArray[T](o: TraversableOnce[T]) {
+class InlineArray[T](o: Array[T]) {
   import InlineArray._
 
   def find(fn: T => Boolean): Option[T] = macro findMethod[T]
@@ -22,7 +22,7 @@ object InlineArray {
     @inline def inline: InlineArray[T] = new InlineArray(o)
   }
 
-  def find[T](ts: TraversableOnce[T])(fn: T => Boolean): Option[T] = macro findMacro[T]
+  def find[T](ts: Array[T])(fn: T => Boolean): Option[T] = macro findMacro[T]
 
   private[this] def findTree[T](c: Context)(ts: c.Tree, fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] = {
     import c.universe._
@@ -48,7 +48,7 @@ object InlineArray {
     c.Expr[Option[T]](tree)
   }
 
-  def findMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
+  def findMacro[T](c: Context)(ts: c.Expr[Array[T]])(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
     findTree(c)(ts.tree, fn)
 
   def findMethod[T](c: Context)(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
