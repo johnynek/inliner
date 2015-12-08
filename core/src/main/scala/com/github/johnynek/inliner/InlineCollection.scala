@@ -30,6 +30,7 @@ object InlineCollection {
   implicit class ToInlineIterable[T](val o: Iterable[T]) extends AnyVal {
     @inline def inline: InlineCollection[T] = new InlineCollection(o)
   }
+
   def find[T](ts: TraversableOnce[T])(fn: T => Boolean): Option[T] = macro findMacro[T]
 
   private[this] def findTree[T](c: Context)(ts: c.Tree, fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] = {
