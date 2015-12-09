@@ -2,7 +2,6 @@ package com.github.johnynek.inliner.benchmark.jmh
 
 import com.github.johnynek.inliner.InlineCollection._
 import com.github.johnynek.inliner.InlineArray._
-import com.github.johnynek.inliner.InlineArraySpecializedOption
 
 import java.util.Random
 import java.util.concurrent.TimeUnit
@@ -18,7 +17,7 @@ object CollectionBenchmarks{
   private val inputList = List.fill(100)(4) ++ List(5)
   private val referenceList: List[java.lang.Integer] = List.fill(100)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))
   private val referenceArray: Array[java.lang.Integer] = (List.fill(100)(Integer.valueOf(4)) ++ List(Integer.valueOf(5))).toArray
-  private val valueTarget:Int  = 5
+  private val valueTarget: Int = 5
 
 }
 
@@ -37,7 +36,7 @@ class CollectionBenchmarks {
 
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputList.inline.find{x => iter % 5 == 0 || x == 5})
+      bh.consume(inputList.inline.find{x => iter % 5 == x || x == 5})
     }
   }
 
@@ -48,7 +47,7 @@ class CollectionBenchmarks {
 
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputList.find{x => iter % 5 == 0 || x == 5})
+      bh.consume(inputList.find{x => iter % 5 == x || x == 5})
     }
   }
 
@@ -59,18 +58,7 @@ class CollectionBenchmarks {
 
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputArray.inline.find{x => iter % 5 == 0 || x == 5})
-    }
-  }
-
-  @Benchmark
-  @Measurement(batchSize = 200000)
-  def findArraySpecializedInline(bh: Blackhole): Unit = {
-    var iter = 20
-
-    while(iter > 0) {
-      iter -= 1
-      bh.consume(InlineArraySpecializedOption.find(inputArray){x => iter % 5 == 0 || x == 5})
+      bh.consume(inputArray.inline.find{x => iter % 5 == x || x == 5})
     }
   }
 
@@ -81,19 +69,18 @@ class CollectionBenchmarks {
 
     while(iter > 0) {
       iter -= 1
-      bh.consume(inputArray.find{x => iter % 5 == 0 || x == 5})
+      bh.consume(inputArray.find{x => iter % 5 == x || x == 5})
     }
   }
 
-
-   @Benchmark
+  @Benchmark
   @Measurement(batchSize = 200000)
   def findReferenceListInline(bh: Blackhole): Unit = {
     var iter = 20
     val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
-      bh.consume(referenceList.inline.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
+      bh.consume(referenceList.inline.find{x => iter % 5 == x || x.eq(referenceTarget)})
     }
   }
 
@@ -104,7 +91,32 @@ class CollectionBenchmarks {
     val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
-      bh.consume(referenceList.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
+      bh.consume(referenceList.find{x => iter % 5 == x || x.eq(referenceTarget)})
+    }
+  }
+  /**
+   * This is here to check if iterating using .tail is faster.
+   * So far, it does not appear so.
+   */
+  @Benchmark
+  @Measurement(batchSize = 200000)
+  def findReferenceListHeadTail(bh: Blackhole): Unit = {
+    var iter = 20
+    val referenceTarget = Integer.valueOf(5)
+    while(iter > 0) {
+      iter -= 1
+      var pointer = referenceList
+      var running = true
+      var result: Option[Int] = None
+      while(running && pointer.nonEmpty) {
+        val x = pointer.head
+        pointer = pointer.tail
+        if (iter % 5 == x || x.eq(referenceTarget)) {
+          running = false
+          result = Some(x)
+        }
+      }
+      bh.consume(result)
     }
   }
 
@@ -115,18 +127,7 @@ class CollectionBenchmarks {
     val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
-      bh.consume(referenceArray.inline.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
-    }
-  }
-
-  @Benchmark
-  @Measurement(batchSize = 200000)
-  def findReferenceArraySpecializedInline(bh: Blackhole): Unit = {
-    var iter = 20
-    val referenceTarget = Integer.valueOf(5)
-    while(iter > 0) {
-      iter -= 1
-      bh.consume(InlineArraySpecializedOption.find(referenceArray){x => iter % 5 == 0 || x.eq(referenceTarget)})
+      bh.consume(referenceArray.inline.find{x => iter % 5 == x || x.eq(referenceTarget)})
     }
   }
 
@@ -137,7 +138,7 @@ class CollectionBenchmarks {
     val referenceTarget = Integer.valueOf(5)
     while(iter > 0) {
       iter -= 1
-      bh.consume(referenceArray.find{x => iter % 5 == 0 || x.eq(referenceTarget)})
+      bh.consume(referenceArray.find{x => iter % 5 == x || x.eq(referenceTarget)})
     }
   }
 

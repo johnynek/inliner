@@ -51,7 +51,7 @@ object InlineCollection {
       }
       $res
     }"""
-    println(tree)
+    //println(tree)
     c.Expr[Option[T]](tree)
   }
   def findMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
