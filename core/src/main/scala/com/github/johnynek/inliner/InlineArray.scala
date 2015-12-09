@@ -32,13 +32,15 @@ object InlineArray {
     val idx = newTerm(c, "idx")
     val len = newTerm(c, "len")
     val res = newTerm(c, "res")
+    val ary = newTerm(c, "ary")
     val running = newTerm(c, "running")
     val tree = q"""{
+      val $ary = $ts // materialize the array
       var $res: _root_.scala.Option[$T] = _root_.scala.None
       var $idx = 0
-      val $len = $ts.length
+      val $len = $ary.length
       while($idx < $len) {
-        val $arg = $ts($idx)
+        val $arg = $ary($idx)
         if($newTree) { $res = _root_.scala.Some($arg); $idx = $len }
         $idx += 1
       }
@@ -64,12 +66,14 @@ object InlineArray {
     val len = newTerm(c, "len")
     val idx = newTerm(c, "idx")
     val res = newTerm(c, "res")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
+      val $ary = $ts // materialize the array
       var $res = true
       var $idx = 0
-      val $len = $ts.length
+      val $len = $ary.length
       while($res && $idx < $len) {
-        val $arg = $ts($idx)
+        val $arg = $ary($idx)
         $res = $newTree
         $idx += 1
       }
@@ -93,11 +97,13 @@ object InlineArray {
     //println(showRaw(newTree))
     val idx = newTerm(c, "idx")
     val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
+      val $ary = $ts
       var $idx = 0
-      val $len = $ts.length
+      val $len = $ary.length
       while($idx < $len) {
-        val $arg = $ts($idx)
+        val $arg = $ary($idx)
         $newTree
         $idx += 1
       }
@@ -120,12 +126,14 @@ object InlineArray {
     val (uarg, targ, newTree) = function2Apply[U, T, U](c)(fn)
     val idx = newTerm(c, "idx")
     val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
+      val $ary = $ts
       var $idx = 0
-      val $len = $ts.length
+      val $len = $ary.length
       var $uarg = $init
       while($idx < $len) {
-        val $targ = $ts($idx)
+        val $targ = $ary($idx)
         $uarg = $newTree
         $idx += 1
       }
@@ -149,13 +157,15 @@ object InlineArray {
     val (uarg, targ, newTree) = function2Apply(c)(fn)
     val idx = newTerm(c, "idx")
     val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
-      val $len: Int = $ts.length
+      val $ary = $ts
+      val $len: Int = $ary.length
       if($len == 0) _root_.scala.None else _root_.scala.Some {
         var $idx: Int = 1;
-        var $uarg = $ts(0)
+        var $uarg = $ary(0)
         while($idx < $len) {
-          val $targ = $ts($idx);
+          val $targ = $ary($idx);
           $uarg = $newTree
           $idx += 1
         }
