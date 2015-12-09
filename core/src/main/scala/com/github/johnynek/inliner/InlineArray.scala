@@ -8,8 +8,8 @@ import MacroCompat.{Context, newTerm, recurse, singleConsArg}
  * them to be called as (new InlineOption(o).method) or it won't compile,
  * if it compiles, that bit is replaced with code using if/else
  */
-class InlineCollection[T](o: TraversableOnce[T]) {
-  import InlineCollection._
+class InlineArray[T](o: Array[T]) {
+  import InlineArray._
 
   def find(fn: T => Boolean): Option[T] = macro findMethod[T]
   def forall(fn: T => Boolean): Boolean = macro forallMethod[T]
@@ -17,44 +17,40 @@ class InlineCollection[T](o: TraversableOnce[T]) {
   def foreach(fn: T => Unit): Unit = macro foreachMethod[T]
   def reduceOption(fn: (T, T) => T): Option[T] = macro reduceOptionMethod[T]
 }
-object InlineCollection {
-  implicit class ToInlineList[T](val o: List[T]) extends AnyVal {
-    @inline def inline: InlineCollection[T] = new InlineCollection(o)
-  }
-  implicit class ToInlineVector[T](val o: Vector[T]) extends AnyVal {
-    @inline def inline: InlineCollection[T] = new InlineCollection(o)
-  }
-  implicit class ToInlineSeq[T](val o: Seq[T]) extends AnyVal {
-    @inline def inline: InlineCollection[T] = new InlineCollection(o)
-  }
-  implicit class ToInlineIterable[T](val o: Iterable[T]) extends AnyVal {
-    @inline def inline: InlineCollection[T] = new InlineCollection(o)
+object InlineArray {
+  implicit class ToInlineArray[T](val o: Array[T]) extends AnyVal {
+    @inline def inline: InlineArray[T] = new InlineArray(o)
   }
 
-  def find[T](ts: TraversableOnce[T])(fn: T => Boolean): Option[T] = macro findMacro[T]
+  def find[T](ts: Array[T])(fn: T => Boolean): Option[T] = macro findMacro[T]
 
   private[this] def findTree[T](c: Context)(ts: c.Tree, fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] = {
     import c.universe._
     //println(showRaw(fn))
     val (arg, newTree) = function1Apply(c)(fn)
     //println(showRaw(newTree))
-    val it = newTerm(c, "it")
+    val idx = newTerm(c, "idx")
+    val len = newTerm(c, "len")
     val res = newTerm(c, "res")
+    val ary = newTerm(c, "ary")
     val running = newTerm(c, "running")
     val tree = q"""{
+      val $ary = $ts // materialize the array
       var $res: _root_.scala.Option[$T] = _root_.scala.None
-      var $running = true
-      val $it = $ts.toIterator
-      while($running && $it.hasNext) {
-        val $arg = $it.next
-        if($newTree) { $res = _root_.scala.Some($arg); $running = false }
+      var $idx = 0
+      val $len = $ary.length
+      while($idx < $len) {
+        val $arg = $ary($idx)
+        if($newTree) { $res = _root_.scala.Some($arg); $idx = $len }
+        $idx += 1
       }
       $res
     }"""
     //println(tree)
     c.Expr[Option[T]](tree)
   }
-  def findMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
+
+  def findMacro[T](c: Context)(ts: c.Expr[Array[T]])(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
     findTree(c)(ts.tree, fn)
 
   def findMethod[T](c: Context)(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
@@ -67,14 +63,19 @@ object InlineCollection {
     //println(showRaw(fn))
     val (arg, newTree) = function1Apply(c)(fn)
     //println(showRaw(newTree))
-    val it = newTerm(c, "it")
+    val len = newTerm(c, "len")
+    val idx = newTerm(c, "idx")
     val res = newTerm(c, "res")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
+      val $ary = $ts // materialize the array
       var $res = true
-      val $it = $ts.toIterator
-      while($res && $it.hasNext) {
-        val $arg = $it.next
+      var $idx = 0
+      val $len = $ary.length
+      while($res && $idx < $len) {
+        val $arg = $ary($idx)
         $res = $newTree
+        $idx += 1
       }
       $res
     }"""
@@ -94,8 +95,20 @@ object InlineCollection {
     //println(showRaw(fn))
     val (arg, newTree) = function1Apply[T, Unit](c)(fn)
     //println(showRaw(newTree))
-    val it = newTerm(c, "it")
-    val tree = q"""{ val $it = $ts.toIterator; while($it.hasNext) { val $arg = $it.next; $newTree } }"""
+    val idx = newTerm(c, "idx")
+    val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
+    val tree = q"""{
+      val $ary = $ts
+      var $idx = 0
+      val $len = $ary.length
+      while($idx < $len) {
+        val $arg = $ary($idx)
+        $newTree
+        $idx += 1
+      }
+      ()
+    }"""
     //println(tree)
     c.Expr[Unit](tree)
   }
@@ -111,8 +124,21 @@ object InlineCollection {
     import c.universe._
     //println(showRaw(fn))
     val (uarg, targ, newTree) = function2Apply[U, T, U](c)(fn)
-    val it = newTerm(c, "it")
-    val tree = q"""{ val $it = $ts.toIterator; var $uarg = $init; while($it.hasNext) { val $targ = $it.next; $uarg = $newTree }; $uarg }"""
+    val idx = newTerm(c, "idx")
+    val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
+    val tree = q"""{
+      val $ary = $ts
+      var $idx = 0
+      val $len = $ary.length
+      var $uarg = $init
+      while($idx < $len) {
+        val $targ = $ary($idx)
+        $uarg = $newTree
+        $idx += 1
+      }
+      $uarg
+    }"""
     //println(tree)
     c.Expr[U](tree)
   }
@@ -129,14 +155,19 @@ object InlineCollection {
     import c.universe._
     //println(showRaw(fn))
     val (uarg, targ, newTree) = function2Apply(c)(fn)
-    val it = newTerm(c, "it")
+    val idx = newTerm(c, "idx")
+    val len = newTerm(c, "len")
+    val ary = newTerm(c, "ary")
     val tree = q"""{
-      val $it = $ts.toIterator;
-      if($it.isEmpty) _root_.scala.None else _root_.scala.Some {
-        var $uarg = $it.next;
-        while($it.hasNext) {
-          val $targ = $it.next;
+      val $ary = $ts
+      val $len: Int = $ary.length
+      if($len == 0) _root_.scala.None else _root_.scala.Some {
+        var $idx: Int = 1;
+        var $uarg = $ary(0)
+        while($idx < $len) {
+          val $targ = $ary($idx);
           $uarg = $newTree
+          $idx += 1
         }
         $uarg
       }

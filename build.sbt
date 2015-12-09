@@ -1,3 +1,5 @@
+import pl.project13.scala.sbt.SbtJmh
+
 // Versions:
 val macroParadiseV = "2.0.1"
 val scalacheckV = "1.12.4"
@@ -55,3 +57,13 @@ lazy val core = Project(id = "core",
           )
       })
   )
+
+/**
+ * recommended to run with:
+ * ./sbt "benchmark-jmh/jmh:run -i 20 -wi 10 -f1 -t1"
+ */
+lazy val jmh = Project(id = "benchmark-jmh",
+  base = file("benchmark-jmh"))
+  .settings(commonSettings)
+  .enablePlugins(JmhPlugin)
+  .dependsOn(core)
