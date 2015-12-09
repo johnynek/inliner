@@ -56,7 +56,7 @@ object InlineArray {
   def findMethod[T](c: Context)(fn: c.Expr[T => Boolean])(implicit T: c.WeakTypeTag[T]): c.Expr[Option[T]] =
     findTree(c)(singleConsArg(c), fn)
 
-  def forall[T](ts: TraversableOnce[T])(fn: T => Boolean): Boolean = macro forallMacro[T]
+  def forall[T](ts: Array[T])(fn: T => Boolean): Boolean = macro forallMacro[T]
 
   private[this] def forallTree[T](c: Context)(ts: c.Tree, fn: c.Expr[T => Boolean]): c.Expr[Boolean] = {
     import c.universe._
@@ -82,13 +82,13 @@ object InlineArray {
     //println(tree)
     c.Expr[Boolean](tree)
   }
-  def forallMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[T => Boolean]): c.Expr[Boolean] =
+  def forallMacro[T](c: Context)(ts: c.Expr[Array[T]])(fn: c.Expr[T => Boolean]): c.Expr[Boolean] =
     forallTree(c)(ts.tree, fn)
 
   def forallMethod[T](c: Context)(fn: c.Expr[T => Boolean]): c.Expr[Boolean] =
     forallTree(c)(singleConsArg(c), fn)
 
-  def foreach[T](ts: TraversableOnce[T])(fn: T => Unit): Unit = macro foreachMacro[T]
+  def foreach[T](ts: Array[T])(fn: T => Unit): Unit = macro foreachMacro[T]
 
   private[this] def foreachTree[T](c: Context)(ts: c.Tree, fn: c.Expr[T => Unit]): c.Expr[Unit] = {
     import c.universe._
@@ -112,13 +112,13 @@ object InlineArray {
     //println(tree)
     c.Expr[Unit](tree)
   }
-  def foreachMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[T => Unit]): c.Expr[Unit] =
+  def foreachMacro[T](c: Context)(ts: c.Expr[Array[T]])(fn: c.Expr[T => Unit]): c.Expr[Unit] =
     foreachTree(c)(ts.tree, fn)
 
   def foreachMethod[T](c: Context)(fn: c.Expr[T => Unit]): c.Expr[Unit] =
     foreachTree(c)(singleConsArg(c), fn)
 
-  def foldLeft[T, U](ts: TraversableOnce[T], init: U)(fn: (U, T) => U): U = macro foldLeftMacro[T, U]
+  def foldLeft[T, U](ts: Array[T], init: U)(fn: (U, T) => U): U = macro foldLeftMacro[T, U]
 
   private[this] def foldLeftTree[T, U](c: Context)(ts: c.Tree, init: c.Expr[U], fn: c.Expr[(U, T) => U]): c.Expr[U] = {
     import c.universe._
@@ -143,13 +143,13 @@ object InlineArray {
     c.Expr[U](tree)
   }
 
-  def foldLeftMacro[T, U](c: Context)(ts: c.Expr[TraversableOnce[T]], init: c.Expr[U])(fn: c.Expr[(U, T) => U]): c.Expr[U] =
+  def foldLeftMacro[T, U](c: Context)(ts: c.Expr[Array[T]], init: c.Expr[U])(fn: c.Expr[(U, T) => U]): c.Expr[U] =
     foldLeftTree(c)(ts.tree, init, fn)
 
   def foldLeftMethod[T, U](c: Context)(init: c.Expr[U])(fn: c.Expr[(U, T) => U]): c.Expr[U] =
     foldLeftTree(c)(singleConsArg(c), init, fn)
 
-  def reduceOption[T](ts: TraversableOnce[T])(fn: (T, T) => T): Option[T] = macro reduceOptionMacro[T]
+  def reduceOption[T](ts: Array[T])(fn: (T, T) => T): Option[T] = macro reduceOptionMacro[T]
 
   private[this] def reduceOptionTree[T](c: Context)(ts: c.Tree, fn: c.Expr[(T, T) => T]): c.Expr[Option[T]] = {
     import c.universe._
@@ -176,7 +176,7 @@ object InlineArray {
     c.Expr[Option[T]](tree)
   }
 
-  def reduceOptionMacro[T](c: Context)(ts: c.Expr[TraversableOnce[T]])(fn: c.Expr[(T, T) => T]): c.Expr[Option[T]] =
+  def reduceOptionMacro[T](c: Context)(ts: c.Expr[Array[T]])(fn: c.Expr[(T, T) => T]): c.Expr[Option[T]] =
     reduceOptionTree(c)(ts.tree, fn)
 
   def reduceOptionMethod[T](c: Context)(fn: c.Expr[(T, T) => T]): c.Expr[Option[T]] =
