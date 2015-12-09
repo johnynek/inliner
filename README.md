@@ -8,12 +8,15 @@ Inliner is a collection of scala macros to inline and optimize idiomatic scala i
 Add `val inliner = ProjectRef(uri("git://github.com/johnynek/inliner.git"), "core")` to your sbt project, then add `.dependsOn(inliner)`
 to any project where you want to use the code. Then do:
 ```scala
-import com.github.johnynek.inliner.{InlineTry, InlineOption, InlineCollection}
-import InlineTry._
-import InlineOption._
+import com.github.johnynek.inliner.{InlineArray, InlineCollection, InlineOption, InlineRange, InlineTry}
+// import the .inline enrichment:
+import InlineArray._
 import InlineCollection._
+import InlineOption._
+import InlineTry._
 ```
-Generally you import methods from an object and replace calls like `x.method` with `x.inline.method`
+Generally you import methods from an object and replace calls like `x.method` with `x.inline.method`. You can
+also use the non-method syntax: `foldLeft(List(1, 2, 3), "")(_ + _)`
 
 ### Collections
 There are `.inline` versions of the following TraversableOnce methods: `find`, `forall`, `foldLeft`, `foreach`, `reduceOption`.
